@@ -86,22 +86,20 @@ fn make_thread(
     id: String,
 ) {
     spawn(move || loop {
-        if let Some(_) = recv.recv() {
-            if let Ok(output) = get_values(config.bytes) {
-                if let Ok(vals) = parse_values(output) {
-                    if vals.len() == 3 {
-                        let (ref mut update, ref mut values) = *values
-                            .lock()
-                            .expect("main thread paniced while holding speedtest-values mutex");
-                        *values = vals;
+        if recv.recv().is_some() {
+            if let Ok(vals) = get_values(config.bytes).and_then(parse_values) {
+                if vals.len() == 3 {
+                    let (ref mut update, ref mut values) = *values
+                        .lock()
+                        .expect("main thread paniced while holding speedtest-values mutex");
+                    *values = vals;
 
-                        *update = true;
+                    *update = true;
 
-                        done.send(Task {
-                            id: id.clone(),
-                            update_time: Instant::now(),
-                        })
-                    }
+                    done.send(Task {
+                        id: id.clone(),
+                        update_time: Instant::now(),
+                    })
                 }
             }
         }
@@ -122,21 +120,21 @@ impl ConfigBlock for SpeedTest {
 
         let ty = if block_config.bytes { "MB/s" } else { "Mb/s" };
         Ok(SpeedTest {
-            vals,
+            config: block_config,
             text: vec![
                 ButtonWidget::new(config.clone(), &id)
                     .with_icon("ping")
                     .with_text("0ms"),
                 ButtonWidget::new(config.clone(), &id)
-                    .with_icon("net_down")
+                    .with_icon("net_up")
                     .with_text(&format!("0{}", ty)),
                 ButtonWidget::new(config.clone(), &id)
-                    .with_icon("net_up")
+                    .with_icon("net_down")
                     .with_text(&format!("0{}", ty)),
             ],
             id,
             send,
-            config: block_config,
+            vals,
         })
     }
 }
@@ -155,8 +153,8 @@ impl Block for SpeedTest {
                 let ty = if self.config.bytes { "MB/s" } else { "Mb/s" };
 
                 self.text[0].set_text(format!("{}ms", vals[0]));
-                self.text[1].set_text(format!("{}{}", vals[1], ty));
-                self.text[2].set_text(format!("{}{}", vals[2], ty));
+                self.text[2].set_text(format!("{}{}", vals[1], ty));
+                self.text[1].set_text(format!("{}{}", vals[2], ty));
 
                 self.text[0].set_state(match_range!(vals[0], default: (State::Critical) {
                             0.0 ; 25.0 => State::Good,
