@@ -1,19 +1,19 @@
-use std::time::Duration;
-use std::process::Command;
 use std::ffi::OsStr;
+use std::process::Command;
+use std::time::Duration;
 
 use block::{Block, ConfigBlock};
+use chan::Sender;
+use chrono::offset::{Local, Utc};
+use chrono_tz::Tz;
 use config::Config;
 use de::{deserialize_duration, deserialize_timezone};
 use errors::*;
-use chrono::offset::{Utc, Local};
-use chrono_tz::Tz;
-use scheduler::Task;
-use chan::Sender;
-use widgets::button::ButtonWidget;
-use widget::I3BarWidget;
 use input::I3BarEvent;
+use scheduler::Task;
 use uuid::Uuid;
+use widget::I3BarWidget;
+use widgets::button::ButtonWidget;
 
 pub struct Time {
     time: ButtonWidget,
@@ -32,13 +32,19 @@ pub struct TimeConfig {
     pub format: String,
 
     /// Update interval in seconds
-    #[serde(default = "TimeConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "TimeConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     #[serde(default = "TimeConfig::default_on_click")]
     pub on_click: Option<String>,
 
-    #[serde(default = "TimeConfig::default_timezone", deserialize_with = "deserialize_timezone")]
+    #[serde(
+        default = "TimeConfig::default_timezone",
+        deserialize_with = "deserialize_timezone"
+    )]
     pub timezone: Option<Tz>,
 }
 
@@ -63,7 +69,11 @@ impl TimeConfig {
 impl ConfigBlock for Time {
     type Config = TimeConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let i = format!("{}", Uuid::new_v4().to_simple());
         Ok(Time {
             id: i.clone(),
@@ -88,13 +98,11 @@ impl Block for Time {
         Ok(Some(self.update_interval))
     }
 
-
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         let mut command = "".to_string();
         if self.on_click.is_some() {
             command = self.on_click.clone().unwrap();
         }
-
 
         if let Some(ref name) = e.name {
             if name.as_str() == self.id && self.on_click.is_some() {

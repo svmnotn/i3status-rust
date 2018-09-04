@@ -1,8 +1,8 @@
-use std::time::Duration;
-use std::process::Command;
-use std::str::FromStr;
 use chan::Sender;
 use scheduler::Task;
+use std::process::Command;
+use std::str::FromStr;
+use std::time::Duration;
 
 use util::FormatTemplate;
 
@@ -10,9 +10,9 @@ use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::button::ButtonWidget;
-use widget::I3BarWidget;
 use input::{I3BarEvent, MouseButton};
+use widget::I3BarWidget;
+use widgets::button::ButtonWidget;
 
 use uuid::Uuid;
 
@@ -40,8 +40,7 @@ impl Monitor {
                     self.name,
                     (self.brightness as i32 + step) as f32 / 100.0
                 ).as_str(),
-            ])
-            .spawn()
+            ]).spawn()
             .expect("Failed to set xrandr output.");
         self.brightness = (self.brightness as i32 + step) as u32;
     }
@@ -65,7 +64,10 @@ pub struct Xrandr {
 #[serde(deny_unknown_fields)]
 pub struct XrandrConfig {
     /// Update interval in seconds
-    #[serde(default = "XrandrConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "XrandrConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     /// Show icons for brightness and resolution (needs awesome fonts support)
@@ -100,12 +102,12 @@ impl XrandrConfig {
 }
 
 macro_rules! unwrap_or_continue {
-    ($e: expr) => (
+    ($e: expr) => {
         match $e {
             Some(e) => e,
             None => continue,
         }
-    )
+    };
 }
 
 impl Xrandr {
@@ -163,7 +165,8 @@ impl Xrandr {
                 display = name.trim();
                 if let Some(brightness_raw) = b_line.split(':').collect::<Vec<&str>>().get(1) {
                     brightness = (f32::from_str(brightness_raw.trim())
-                        .block_error("xrandr", "unable to parse brightness")? * 100.0)
+                        .block_error("xrandr", "unable to parse brightness")?
+                        * 100.0)
                         .floor() as u32;
                 }
             }
@@ -204,7 +207,6 @@ impl Xrandr {
                 format_str = "{display}: {brightness}";
             }
 
-
             if let Ok(fmt_template) = FormatTemplate::from_string(String::from(format_str)) {
                 self.text.set_text(fmt_template.render_static_str(&values)?);
             }
@@ -217,7 +219,11 @@ impl Xrandr {
 impl ConfigBlock for Xrandr {
     type Config = XrandrConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let id = format!("{}", Uuid::new_v4().to_simple());
         let mut step_width = block_config.step_width;
         if step_width > 50 {
@@ -262,16 +268,20 @@ impl Block for Xrandr {
                     } else {
                         self.current_idx = 0;
                     },
-                    MouseButton::WheelUp => if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
-                        if monitor.brightness <= (100 - self.step_width) {
-                            monitor.set_brightness(self.step_width as i32);
+                    MouseButton::WheelUp => {
+                        if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
+                            if monitor.brightness <= (100 - self.step_width) {
+                                monitor.set_brightness(self.step_width as i32);
+                            }
                         }
-                    },
-                    MouseButton::WheelDown => if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
-                        if monitor.brightness >= self.step_width {
-                            monitor.set_brightness(-(self.step_width as i32));
+                    }
+                    MouseButton::WheelDown => {
+                        if let Some(monitor) = self.monitors.get_mut(self.current_idx) {
+                            if monitor.brightness >= self.step_width {
+                                monitor.set_brightness(-(self.step_width as i32));
+                            }
                         }
-                    },
+                    }
                     _ => {}
                 }
                 self.display()?;

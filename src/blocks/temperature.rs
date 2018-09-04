@@ -1,16 +1,16 @@
-use std::time::Duration;
-use std::process::Command;
-use util::FormatTemplate;
 use chan::Sender;
 use scheduler::Task;
+use std::process::Command;
+use std::time::Duration;
+use util::FormatTemplate;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::button::ButtonWidget;
-use widget::{I3BarWidget, State};
 use input::{I3BarEvent, MouseButton};
+use widget::{I3BarWidget, State};
+use widgets::button::ButtonWidget;
 
 use uuid::Uuid;
 
@@ -27,7 +27,10 @@ pub struct Temperature {
 #[serde(deny_unknown_fields)]
 pub struct TemperatureConfig {
     /// Update interval in seconds
-    #[serde(default = "TemperatureConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "TemperatureConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     /// Collapsed by default?
@@ -56,7 +59,11 @@ impl TemperatureConfig {
 impl ConfigBlock for Temperature {
     type Config = TemperatureConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let id = format!("{}", Uuid::new_v4().to_simple());
         Ok(Temperature {
             update_interval: block_config.interval,
@@ -117,7 +124,8 @@ impl Block for Temperature {
                 .iter()
                 .min()
                 .block_error("temperature", "failed to get min temperature")?;
-            let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64).round() as i64;
+            let avg: i64 = (temperatures.iter().sum::<i64>() as f64 / temperatures.len() as f64)
+                .round() as i64;
 
             let values = map!("{average}" => avg,
                               "{min}" => min,

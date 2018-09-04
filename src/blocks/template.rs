@@ -1,14 +1,14 @@
-use std::time::Duration;
 use chan::Sender;
+use std::time::Duration;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::text::TextWidget;
-use widget::I3BarWidget;
 use input::I3BarEvent;
 use scheduler::Task;
+use widget::I3BarWidget;
+use widgets::text::TextWidget;
 
 use uuid::Uuid;
 
@@ -28,7 +28,10 @@ pub struct Template {
 #[serde(deny_unknown_fields)]
 pub struct TemplateConfig {
     /// Update interval in seconds
-    #[serde(default = "TemplateConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "TemplateConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 }
 
@@ -41,7 +44,11 @@ impl TemplateConfig {
 impl ConfigBlock for Template {
     type Config = TemplateConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         Ok(Template {
             id: format!("{}", Uuid::new_v4().to_simple()),
             update_interval: block_config.interval,

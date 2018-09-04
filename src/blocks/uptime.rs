@@ -10,8 +10,8 @@ use de::deserialize_duration;
 use errors::*;
 use scheduler::Task;
 use util::read_file;
-use widgets::text::TextWidget;
 use widget::I3BarWidget;
+use widgets::text::TextWidget;
 
 pub struct Uptime {
     text: TextWidget,
@@ -19,15 +19,20 @@ pub struct Uptime {
     update_interval: Duration,
 
     //useful, but optional
-    #[allow(dead_code)] config: Config,
-    #[allow(dead_code)] tx_update_request: Sender<Task>,
+    #[allow(dead_code)]
+    config: Config,
+    #[allow(dead_code)]
+    tx_update_request: Sender<Task>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct UptimeConfig {
     /// Update interval in seconds
-    #[serde(default = "UptimeConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "UptimeConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 }
 
@@ -40,7 +45,11 @@ impl UptimeConfig {
 impl ConfigBlock for Uptime {
     type Config = UptimeConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         Ok(Uptime {
             id: format!("{}", Uuid::new_v4().to_simple()),
             update_interval: block_config.interval,

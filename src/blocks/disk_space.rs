@@ -1,14 +1,14 @@
-use std::time::Duration;
-use std::path::Path;
 use chan::Sender;
 use scheduler::Task;
+use std::path::Path;
+use std::time::Duration;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::text::TextWidget;
 use widget::{I3BarWidget, State};
+use widgets::text::TextWidget;
 
 use uuid::Uuid;
 
@@ -22,7 +22,7 @@ pub enum Unit {
     GB,
     GiB,
     MiB,
-    Percent
+    Percent,
 }
 
 impl Unit {
@@ -79,7 +79,10 @@ pub struct DiskSpaceConfig {
     pub unit: Unit,
 
     /// Update interval in seconds
-    #[serde(default = "DiskSpaceConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "DiskSpaceConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     /// Diskspace warning in GiB (yellow)
@@ -131,11 +134,15 @@ impl DiskSpaceConfig {
 
 impl DiskSpace {
     fn compute_state(&self, bytes: u64, warning: f64, alert: f64) -> State {
-        let value = if self.unit == Unit::Percent { bytes as f64 } else { Unit::bytes_in_unit(Unit::GB, bytes) };
+        let value = if self.unit == Unit::Percent {
+            bytes as f64
+        } else {
+            Unit::bytes_in_unit(Unit::GB, bytes)
+        };
         match self.unit {
-            Unit::Percent => {
-                match self.info_type {
-                    InfoType::Available | InfoType::Free | InfoType::Total | InfoType::Used => if value > alert {
+            Unit::Percent => match self.info_type {
+                InfoType::Available | InfoType::Free | InfoType::Total | InfoType::Used => {
+                    if value > alert {
                         State::Critical
                     } else if value <= alert && value > warning {
                         State::Warning
@@ -143,10 +150,10 @@ impl DiskSpace {
                         State::Idle
                     }
                 }
-            }
-            _ => {
-                match self.info_type {
-                    InfoType::Available | InfoType::Free | InfoType::Total | InfoType::Used => if 0. <= value && value < alert {
+            },
+            _ => match self.info_type {
+                InfoType::Available | InfoType::Free | InfoType::Total | InfoType::Used => {
+                    if 0. <= value && value < alert {
                         State::Critical
                     } else if alert <= value && value < warning {
                         State::Warning
@@ -154,7 +161,7 @@ impl DiskSpace {
                         State::Idle
                     }
                 }
-            }
+            },
         }
     }
 }
@@ -162,7 +169,11 @@ impl DiskSpace {
 impl ConfigBlock for DiskSpace {
     type Config = DiskSpaceConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         Ok(DiskSpace {
             id: format!("{}", Uuid::new_v4().to_simple()),
             update_interval: block_config.interval,
@@ -202,11 +213,7 @@ impl Block for DiskSpace {
                 let converted_used = Unit::bytes_in_unit(self.unit, result);
                 let converted_total = Unit::bytes_in_unit(self.unit, total);
 
-                converted_str = format!(
-                                    "{0:.2}/{1:.2}",
-                                    converted_used,
-                                    converted_total
-                                );
+                converted_str = format!("{0:.2}/{1:.2}", converted_used, converted_total);
             }
             InfoType::Used => {
                 result = used;
@@ -220,26 +227,19 @@ impl Block for DiskSpace {
         }
 
         if self.unit == Unit::Percent {
-            self.disk_space.set_text(format!("{0} {1:.2}%",
-                self.alias,
-                percentage
-            ));
+            self.disk_space
+                .set_text(format!("{0} {1:.2}%", self.alias, percentage));
             result = percentage as u64;
         } else {
             if self.show_percentage {
                 self.disk_space.set_text(format!(
                     "{0} {1} ({2:.2}%) {3:?}",
-                    self.alias,
-                    converted_str,
-                    percentage,
-                    self.unit
+                    self.alias, converted_str, percentage, self.unit
                 ));
             } else {
                 self.disk_space.set_text(format!(
                     "{0} {1} {2:?}",
-                    self.alias,
-                    converted_str,
-                    self.unit
+                    self.alias, converted_str, self.unit
                 ));
             }
         }

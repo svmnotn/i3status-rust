@@ -1,8 +1,8 @@
+use chan::Sender;
+use serde_json;
 use std::collections::HashMap;
 use std::process::Command;
 use std::time::Duration;
-use chan::Sender;
-use serde_json;
 use uuid::Uuid;
 
 use block::{Block, ConfigBlock};
@@ -12,8 +12,8 @@ use errors::*;
 use input::{I3BarEvent, MouseButton};
 use scheduler::Task;
 use util::FormatTemplate;
-use widgets::button::ButtonWidget;
 use widget::I3BarWidget;
+use widgets::button::ButtonWidget;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "name", rename_all = "lowercase")]
@@ -85,10 +85,8 @@ impl Weather {
                     return Ok(());
                 }
 
-                let json: serde_json::value::Value = serde_json::from_str(&output).block_error(
-                    "weather",
-                    "Failed to parse JSON response.",
-                )?;
+                let json: serde_json::value::Value = serde_json::from_str(&output)
+                    .block_error("weather", "Failed to parse JSON response.")?;
 
                 // Try to convert an API error into a block error.
                 if let Some(val) = json.get("message") {
@@ -97,9 +95,11 @@ impl Weather {
                         format!("API Error: {}", val.as_str().unwrap()),
                     ));
                 };
-                let raw_weather = match json.pointer("/weather/0/main")
+                let raw_weather = match json
+                    .pointer("/weather/0/main")
                     .and_then(|v| v.as_str())
-                    .map(|s| s.to_string()) {
+                    .map(|s| s.to_string())
+                {
                     Some(v) => v,
                     None => {
                         return Err(BlockError(
@@ -126,9 +126,11 @@ impl Weather {
                         ));
                     }
                 };
-                let raw_location = match json.pointer("/name").and_then(|v| v.as_str()).map(|s| {
-                    s.to_string()
-                }) {
+                let raw_location = match json
+                    .pointer("/name")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                {
                     Some(v) => v,
                     None => {
                         return Err(BlockError(
@@ -147,8 +149,7 @@ impl Weather {
                     _ => "weather_default",
                 });
 
-                self.weather_keys =
-                    map_to_owned!("{weather}" => raw_weather,
+                self.weather_keys = map_to_owned!("{weather}" => raw_weather,
                                   "{temp}" => format!("{:.0}", raw_temp),
                                   "{wind}" => format!("{:.1}", raw_wind),
                                   "{location}" => raw_location);
@@ -161,7 +162,10 @@ impl Weather {
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct WeatherConfig {
-    #[serde(default = "WeatherConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "WeatherConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
     #[serde(default = "WeatherConfig::default_format")]
     pub format: String,
@@ -181,7 +185,11 @@ impl WeatherConfig {
 impl ConfigBlock for Weather {
     type Config = WeatherConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let id = format!("{}", Uuid::new_v4().to_simple());
         Ok(Weather {
             id: id.clone(),

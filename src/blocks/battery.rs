@@ -44,18 +44,22 @@ impl PowerSupplyDevice {
 
         // Read charge_full exactly once, if it exists.
         let charge_full = if device_path.join("charge_full").exists() {
-            Some(read_file("battery", &device_path.join("charge_full"))?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse charge_full")?)
+            Some(
+                read_file("battery", &device_path.join("charge_full"))?
+                    .parse::<u64>()
+                    .block_error("battery", "failed to parse charge_full")?,
+            )
         } else {
             None
         };
 
         // Read energy_full exactly once, if it exists.
         let energy_full = if device_path.join("energy_full").exists() {
-            Some(read_file("battery", &device_path.join("energy_full"))?
-                .parse::<u64>()
-                .block_error("battery", "failed to parse energy_full")?)
+            Some(
+                read_file("battery", &device_path.join("energy_full"))?
+                    .parse::<u64>()
+                    .block_error("battery", "failed to parse energy_full")?,
+            )
         } else {
             None
         };
@@ -120,7 +124,7 @@ impl PowerSupplyDevice {
             return Err(BlockError(
                 "battery".to_string(),
                 "Device does not support reading energy".to_string(),
-            ))
+            ));
         };
 
         let energy_path = self.device_path.join("energy_now");
@@ -196,7 +200,10 @@ pub enum ShowType {
 #[serde(deny_unknown_fields)]
 pub struct BatteryConfig {
     /// Update interval in seconds
-    #[serde(default = "BatteryConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "BatteryConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     /// The internal power supply device in `/sys/class/power_supply/` to read
@@ -226,7 +233,11 @@ impl BatteryConfig {
 impl ConfigBlock for Battery {
     type Config = BatteryConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         Ok(Battery {
             id: format!("{}", Uuid::new_v4().to_simple()),
             update_interval: block_config.interval,
@@ -260,33 +271,37 @@ impl Block for Battery {
                 // state. So we can avoid computing it entirely when the user
                 // didn't ask for it.
                 ShowType::Time => match self.device.time_remaining() {
-                    Ok(time) => self.output.set_text(format!("{}:{:02}", time / 60, time % 60)),
+                    Ok(time) => self
+                        .output
+                        .set_text(format!("{}:{:02}", time / 60, time % 60)),
                     Err(_) => self.output.set_text("×".to_string()),
                 },
                 ShowType::Both => {
-                    let capacity =  match capacity {
+                    let capacity = match capacity {
                         Ok(capacity) => format!("{}%", capacity),
                         Err(_) => "×".to_string(),
                     };
-                    let time =  match self.device.time_remaining() {
+                    let time = match self.device.time_remaining() {
                         Ok(time) => format!("{}:{:02}", time / 60, time % 60),
                         Err(_) => "×".to_string(),
                     };
                     self.output.set_text(format!("{} {}", capacity, time))
-                },
+                }
             }
 
             // Check if the battery is in charging mode and change the state to Good.
             // Otherwise, adjust the state depeding the power percentance.
             match status.as_str() {
-                "Charging" => { self.output.set_state(State::Good); },
-                _ =>
-                    { self.output.set_state(match capacity {
-                    Ok(0...15) => State::Critical,
-                    Ok(16...30) => State::Warning,
-                    Ok(31...60) => State::Info,
-                    Ok(61...100) => State::Good,
-                    _ => State::Warning,
+                "Charging" => {
+                    self.output.set_state(State::Good);
+                }
+                _ => {
+                    self.output.set_state(match capacity {
+                        Ok(0...15) => State::Critical,
+                        Ok(16...30) => State::Warning,
+                        Ok(31...60) => State::Info,
+                        Ok(61...100) => State::Good,
+                        _ => State::Warning,
                     });
                 }
             }

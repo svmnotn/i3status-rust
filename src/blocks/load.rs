@@ -1,18 +1,18 @@
 use std::time::Duration;
 
 use block::{Block, ConfigBlock};
+use chan::Sender;
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::text::TextWidget;
-use widget::{I3BarWidget, State};
-use util::FormatTemplate;
-use chan::Sender;
 use scheduler::Task;
+use util::FormatTemplate;
+use widget::{I3BarWidget, State};
+use widgets::text::TextWidget;
 
-use std::io::BufReader;
-use std::io::prelude::*;
 use std::fs::{File, OpenOptions};
+use std::io::prelude::*;
+use std::io::BufReader;
 
 use uuid::Uuid;
 
@@ -29,7 +29,10 @@ pub struct Load {
 pub struct LoadConfig {
     #[serde(default = "LoadConfig::default_format")]
     pub format: String,
-    #[serde(default = "LoadConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "LoadConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 }
 
@@ -46,7 +49,11 @@ impl LoadConfig {
 impl ConfigBlock for Load {
     type Config = LoadConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let text = TextWidget::new(config)
             .with_icon("cogs")
             .with_state(State::Info);
@@ -100,14 +107,14 @@ impl Block for Load {
 
         let used_perc = values["{1m}"]
             .parse::<f32>()
-            .block_error("load", "failed to parse float percentage")? / self.logical_cores as f32;
-        self.text.set_state(
-            match_range!(used_perc, default: (State::Idle) {
+            .block_error("load", "failed to parse float percentage")?
+            / self.logical_cores as f32;
+        self.text
+            .set_state(match_range!(used_perc, default: (State::Idle) {
                 0.0 ; 0.3 => State::Idle,
                 0.3 ; 0.6 => State::Info,
                 0.6 ; 0.9 => State::Warning
-        }),
-        );
+        }));
 
         self.text.set_text(self.format.render_static_str(&values)?);
 

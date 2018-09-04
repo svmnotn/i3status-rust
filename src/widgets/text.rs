@@ -1,7 +1,7 @@
-use config::Config;
-use widget::State;
-use serde_json::value::Value;
 use super::super::widget::I3BarWidget;
+use config::Config;
+use serde_json::value::Value;
+use widget::State;
 
 #[derive(Clone, Debug)]
 pub struct TextWidget {

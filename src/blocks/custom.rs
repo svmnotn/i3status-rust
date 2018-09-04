@@ -31,7 +31,10 @@ pub struct Custom {
 #[serde(deny_unknown_fields)]
 pub struct CustomConfig {
     /// Update interval in seconds
-    #[serde(default = "CustomConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "CustomConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     /// Shell Command to execute & display
@@ -72,8 +75,14 @@ impl ConfigBlock for Custom {
             update_interval: block_config.interval,
             on_click: block_config.on_click,
             on_set_clicks: block_config.on_set_clicks,
-            command: if block_config.cycle.is_none() { block_config.command } else { None },
-            cycle: block_config.cycle.map(|cycle| cycle.into_iter().cycle().peekable()),
+            command: if block_config.cycle.is_none() {
+                block_config.command
+            } else {
+                None
+            },
+            cycle: block_config
+                .cycle
+                .map(|cycle| cycle.into_iter().cycle().peekable()),
             tx_update_request: tx,
         })
     }
@@ -109,13 +118,22 @@ impl Block for Custom {
                 let mut update = false;
 
                 if let Some(ref on_click) = self.on_click {
-                    Command::new(env::var("SHELL").unwrap_or("sh".to_owned())).args(&["-c", on_click]).output().ok();
+                    Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+                        .args(&["-c", on_click])
+                        .output()
+                        .ok();
                     update = true;
                 }
 
                 if let Some(ref possible_clicks) = self.on_set_clicks {
-                    for ma in possible_clicks.iter().filter(|ma| ma.button == event.button) {
-                        Command::new(env::var("SHELL").unwrap_or("sh".to_owned())).args(&["-c", &ma.action]).output().ok();
+                    for ma in possible_clicks
+                        .iter()
+                        .filter(|ma| ma.button == event.button)
+                    {
+                        Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+                            .args(&["-c", &ma.action])
+                            .output()
+                            .ok();
                         update = true;
                     }
                 }

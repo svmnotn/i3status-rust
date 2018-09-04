@@ -1,18 +1,24 @@
 use de::*;
 use icons;
 use serde::de::{self, Deserialize, Deserializer};
-use toml::value;
 use std::collections::HashMap as Map;
 use std::marker::PhantomData;
 use std::ops::Deref;
 use std::str::FromStr;
 use themes::{self, Theme};
+use toml::value;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
-    #[serde(default = "icons::default", deserialize_with = "deserialize_icons")]
+    #[serde(
+        default = "icons::default",
+        deserialize_with = "deserialize_icons"
+    )]
     pub icons: Map<String, String>,
-    #[serde(default = "themes::default", deserialize_with = "deserialize_themes")]
+    #[serde(
+        default = "themes::default",
+        deserialize_with = "deserialize_themes"
+    )]
     pub theme: Theme,
     #[serde(rename = "block", deserialize_with = "deserialize_blocks")]
     pub blocks: Vec<(String, value::Value)>,
@@ -62,8 +68,8 @@ where
     map_type!(ThemeIntermediary, String;
               s => Ok(ThemeIntermediary(themes::get_theme(s).ok_or_else(|| "cannot find specified theme")?.owned_map())));
 
-    let intermediary: Map<String, String> = deserializer
-        .deserialize_any(MapType::<ThemeIntermediary, String>(
+    let intermediary: Map<String, String> =
+        deserializer.deserialize_any(MapType::<ThemeIntermediary, String>(
             PhantomData,
             PhantomData,
         ))?;

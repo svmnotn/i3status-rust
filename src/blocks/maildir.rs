@@ -1,15 +1,15 @@
-use std::time::Duration;
 use chan::Sender;
+use std::time::Duration;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::text::TextWidget;
-use widget::{I3BarWidget, State};
 use input::I3BarEvent;
-use scheduler::Task;
 use maildir::Maildir as ExtMaildir;
+use scheduler::Task;
+use widget::{I3BarWidget, State};
+use widgets::text::TextWidget;
 
 use uuid::Uuid;
 
@@ -26,7 +26,10 @@ pub struct Maildir {
 #[serde(deny_unknown_fields)]
 pub struct MaildirConfig {
     /// Update interval in seconds
-    #[serde(default = "MaildirConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "MaildirConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
     pub inboxes: Vec<String>,
     #[serde(default = "MaildirConfig::default_threshold_warning")]
@@ -50,7 +53,11 @@ impl MaildirConfig {
 impl ConfigBlock for Maildir {
     type Config = MaildirConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         Ok(Maildir {
             id: format!("{}", Uuid::new_v4().to_simple()),
             update_interval: block_config.interval,

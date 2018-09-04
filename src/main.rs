@@ -7,15 +7,15 @@ extern crate serde;
 extern crate serde_json;
 #[macro_use]
 extern crate chan;
-extern crate toml;
-extern crate clap;
-extern crate uuid;
-extern crate regex;
-extern crate num;
-extern crate inotify;
-extern crate maildir;
 extern crate chrono;
 extern crate chrono_tz;
+extern crate clap;
+extern crate inotify;
+extern crate maildir;
+extern crate num;
+extern crate regex;
+extern crate toml;
+extern crate uuid;
 
 #[macro_use]
 mod de;
@@ -25,10 +25,10 @@ mod block;
 pub mod blocks;
 mod config;
 mod errors;
-mod input;
 mod icons;
-mod themes;
+mod input;
 mod scheduler;
+mod themes;
 mod widget;
 mod widgets;
 
@@ -40,8 +40,8 @@ use cpuprofiler::PROFILER;
 extern crate progress;
 
 use std::collections::HashMap;
-use std::time::Duration;
 use std::ops::DerefMut;
+use std::time::Duration;
 
 use block::Block;
 
@@ -55,8 +55,8 @@ use widgets::text::TextWidget;
 
 use util::deserialize_file;
 
-use self::clap::{App, Arg, ArgMatches};
 use self::chan::{Receiver, Sender};
+use self::clap::{App, Arg, ArgMatches};
 
 fn main() {
     let mut builder = App::new("i3status-rs")
@@ -64,20 +64,16 @@ fn main() {
         .author(
             "Kai Greshake <development@kai-greshake.de>, Contributors on GitHub: \\
              https://github.com/greshake/i3status-rust/graphs/contributors",
-        )
-        .about("Replacement for i3status for Linux, written in Rust")
+        ).about("Replacement for i3status for Linux, written in Rust")
         .arg(
             Arg::with_name("config")
                 .value_name("CONFIG_FILE")
                 .help("sets a toml config file")
                 .required(true)
                 .index(1),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("exit-on-error")
-                .help(
-                    "exit on error rather than printing the error to i3bar and keep running",
-                )
+                .help("exit on error rather than printing the error to i3bar and keep running")
                 .long("exit-on-error")
                 .takes_value(false),
         );
@@ -89,8 +85,7 @@ fn main() {
                     .long("profile")
                     .takes_value(true)
                     .help("A block to be profiled. Analyze block.profile with pprof"),
-            )
-            .arg(
+            ).arg(
                 Arg::with_name("profile-runs")
                     .long("profile-runs")
                     .takes_value(true)
@@ -167,28 +162,38 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let mut config_alternating_tint = config.clone();
     {
         let tint_bg = &config.theme.alternating_tint_bg;
-        config_alternating_tint.theme.idle_bg = util::add_colors(&config_alternating_tint.theme.idle_bg, tint_bg)
-            .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.info_bg = util::add_colors(&config_alternating_tint.theme.info_bg, tint_bg)
-            .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.good_bg = util::add_colors(&config_alternating_tint.theme.good_bg, tint_bg)
-            .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.warning_bg = util::add_colors(&config_alternating_tint.theme.warning_bg, tint_bg)
-            .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.critical_bg = util::add_colors(&config_alternating_tint.theme.critical_bg, tint_bg)
-            .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.idle_bg =
+            util::add_colors(&config_alternating_tint.theme.idle_bg, tint_bg)
+                .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.info_bg =
+            util::add_colors(&config_alternating_tint.theme.info_bg, tint_bg)
+                .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.good_bg =
+            util::add_colors(&config_alternating_tint.theme.good_bg, tint_bg)
+                .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.warning_bg =
+            util::add_colors(&config_alternating_tint.theme.warning_bg, tint_bg)
+                .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.critical_bg =
+            util::add_colors(&config_alternating_tint.theme.critical_bg, tint_bg)
+                .configuration_error("can't parse alternative_tint color code")?;
 
         let tint_fg = &config.theme.alternating_tint_fg;
-        config_alternating_tint.theme.idle_fg = util::add_colors(&config_alternating_tint.theme.idle_fg, tint_fg)
-            .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.info_fg = util::add_colors(&config_alternating_tint.theme.info_fg, tint_fg)
-            .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.good_fg = util::add_colors(&config_alternating_tint.theme.good_fg, tint_fg)
-            .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.warning_fg = util::add_colors(&config_alternating_tint.theme.warning_fg, tint_fg)
-            .configuration_error("can't parse alternative_tint color code")?;
-        config_alternating_tint.theme.critical_fg = util::add_colors(&config_alternating_tint.theme.critical_fg, tint_fg)
-            .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.idle_fg =
+            util::add_colors(&config_alternating_tint.theme.idle_fg, tint_fg)
+                .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.info_fg =
+            util::add_colors(&config_alternating_tint.theme.info_fg, tint_fg)
+                .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.good_fg =
+            util::add_colors(&config_alternating_tint.theme.good_fg, tint_fg)
+                .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.warning_fg =
+            util::add_colors(&config_alternating_tint.theme.warning_fg, tint_fg)
+                .configuration_error("can't parse alternative_tint color code")?;
+        config_alternating_tint.theme.critical_fg =
+            util::add_colors(&config_alternating_tint.theme.critical_fg, tint_fg)
+                .configuration_error("can't parse alternative_tint color code")?;
     }
 
     let mut blocks: Vec<Box<Block>> = Vec::new();
@@ -274,8 +279,7 @@ fn profile(iterations: i32, name: &str, block: &mut Block) {
     println!(
         "Now profiling the {0} block by executing {1} updates.\n \
          Use pprof to analyze {0}.profile later.",
-        name,
-        iterations
+        name, iterations
     );
 
     PROFILER

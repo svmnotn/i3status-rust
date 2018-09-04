@@ -34,16 +34,15 @@ fn read_brightness(device_file: &Path) -> Result<u64> {
             .block_error("backlight", "Failed to open brightness file")
     );
     let mut content = String::new();
-    try!(file.read_to_string(&mut content).block_error(
-        "backlight",
-        "Failed to read brightness file",
-    ));
+    try!(
+        file.read_to_string(&mut content)
+            .block_error("backlight", "Failed to read brightness file",)
+    );
     // Removes trailing newline.
     content.pop();
-    content.parse::<u64>().block_error(
-        "backlight",
-        "Failed to read value from brightness file",
-    )
+    content
+        .parse::<u64>()
+        .block_error("backlight", "Failed to read value from brightness file")
 }
 
 /// Represents a physical backlit device whose brightness level can be queried.
@@ -68,14 +67,10 @@ impl BacklitDevice {
                 "backlight".to_string(),
                 "No backlit devices found".to_string(),
             )),
-            Some(device) => {
-                device.map_err(|_| {
-                    BlockError(
-                        "backlight".to_string(),
-                        "Failed to read default device file".to_string(),
-                    )
-                })
-            }
+            Some(device) => device.map_err(|_| BlockError(
+                "backlight".to_string(),
+                "Failed to read default device file".to_string(),
+            )),
         });
 
         let max_brightness = try!(read_brightness(&first_device.path().join("max_brightness")));
@@ -120,9 +115,9 @@ impl BacklitDevice {
 
     /// Set the brightness value for this backlit device, as a percent.
     pub fn set_brightness(&self, value: u64) -> Result<()> {
-        let file = OpenOptions::new().write(true).open(self.device_path.join(
-            "brightness",
-        ));
+        let file = OpenOptions::new()
+            .write(true)
+            .open(self.device_path.join("brightness"));
         if file.is_err() {
             // TODO: Find a way to issue a non-fatal error, since this is likely
             // due to a permissions issue and not the fault of the user. It
@@ -181,7 +176,11 @@ impl BacklightConfig {
 impl ConfigBlock for Backlight {
     type Config = BacklightConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let device = try!(match block_config.device {
             Some(path) => BacklitDevice::from_device(path),
             None => BacklitDevice::default(),
@@ -207,9 +206,9 @@ impl ConfigBlock for Backlight {
 
             let mut buffer = [0; 1024];
             loop {
-                let mut events = notify.read_events_blocking(&mut buffer).expect(
-                    "Error while reading inotify events",
-                );
+                let mut events = notify
+                    .read_events_blocking(&mut buffer)
+                    .expect("Error while reading inotify events");
 
                 if events.any(|event| event.mask.contains(EventMask::MODIFY)) {
                     tx_update_request.send(Task {

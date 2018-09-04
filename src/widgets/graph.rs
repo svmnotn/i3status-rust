@@ -1,8 +1,8 @@
-use config::Config;
-use widget::State;
-use serde_json::value::Value;
 use super::super::widget::I3BarWidget;
+use config::Config;
 use num::{clamp, ToPrimitive};
+use serde_json::value::Value;
+use widget::State;
 
 #[derive(Clone, Debug)]
 pub struct GraphWidget {
@@ -64,8 +64,7 @@ impl GraphWidget {
                 .iter()
                 .map(|x| {
                     bars[((clamp(x.to_f64().unwrap(), min, max) - min) / extant * length) as usize]
-                })
-                .collect::<Vec<&'static str>>()
+                }).collect::<Vec<&'static str>>()
                 .concat();
             self.content = Some(bar);
         } else {

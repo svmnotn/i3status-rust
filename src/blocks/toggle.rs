@@ -1,15 +1,15 @@
-use std::time::Duration;
-use std::process::Command;
 use chan::Sender;
 use scheduler::Task;
+use std::process::Command;
+use std::time::Duration;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_opt_duration;
 use errors::*;
-use widgets::button::ButtonWidget;
-use widget::I3BarWidget;
 use input::I3BarEvent;
+use widget::I3BarWidget;
+use widgets::button::ButtonWidget;
 
 use uuid::Uuid;
 
@@ -46,7 +46,11 @@ pub struct ToggleConfig {
 impl ConfigBlock for Toggle {
     type Config = ToggleConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         let id = format!("{}", Uuid::new_v4().to_simple());
         Ok(Toggle {
             text: ButtonWidget::new(config, &id).with_text(&block_config.text),

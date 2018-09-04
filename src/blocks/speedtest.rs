@@ -1,17 +1,17 @@
-use std::time::{Duration, Instant};
-use std::process::Command;
-use std::thread::spawn;
-use std::sync::{Arc, Mutex};
 use chan::{async, Receiver, Sender};
 use scheduler::Task;
+use std::process::Command;
+use std::sync::{Arc, Mutex};
+use std::thread::spawn;
+use std::time::{Duration, Instant};
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
-use widgets::button::ButtonWidget;
-use widget::{I3BarWidget, State};
 use input::{I3BarEvent, MouseButton};
+use widget::{I3BarWidget, State};
+use widgets::button::ButtonWidget;
 
 use uuid::Uuid;
 
@@ -27,7 +27,10 @@ pub struct SpeedTest {
 #[serde(deny_unknown_fields)]
 pub struct SpeedTestConfig {
     /// Update interval in seconds
-    #[serde(default = "SpeedTestConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "SpeedTestConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 
     /// Mode of speed display, true => MB/s, false => Mb/s
@@ -64,16 +67,24 @@ fn parse_values(output: String) -> Result<Vec<f32>> {
     for line in output.lines() {
         let mut word = line.split_whitespace();
         word.next();
-        vals.push(word.next()
-            .block_error("speedtest", "missing data")?
-            .parse::<f32>()
-            .block_error("speedtest", "Unable to parse data")?);
+        vals.push(
+            word.next()
+                .block_error("speedtest", "missing data")?
+                .parse::<f32>()
+                .block_error("speedtest", "Unable to parse data")?,
+        );
     }
 
     Ok(vals)
 }
 
-fn make_thread(recv: Receiver<()>, done: Sender<Task>, values: Arc<Mutex<(bool, Vec<f32>)>>, config: SpeedTestConfig, id: String) {
+fn make_thread(
+    recv: Receiver<()>,
+    done: Sender<Task>,
+    values: Arc<Mutex<(bool, Vec<f32>)>>,
+    config: SpeedTestConfig,
+    id: String,
+) {
     spawn(move || loop {
         if let Some(_) = recv.recv() {
             if let Ok(output) = get_values(config.bytes) {
@@ -132,7 +143,8 @@ impl ConfigBlock for SpeedTest {
 
 impl Block for SpeedTest {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let (ref mut updated, ref vals) = *self.vals
+        let (ref mut updated, ref vals) = *self
+            .vals
             .lock()
             .block_error("speedtest", "mutext poisoned")?;
 

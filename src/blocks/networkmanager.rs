@@ -1,18 +1,18 @@
 use std::fmt;
-use std::time::{Duration, Instant};
 use std::thread;
+use std::time::{Duration, Instant};
 
 use chan::Sender;
 use uuid::Uuid;
 
+use block::{Block, ConfigBlock};
+use blocks::dbus::arg::Variant;
+use blocks::dbus::{BusType, Connection, Message, MessageItem};
 use config::Config;
 use errors::*;
 use scheduler::Task;
-use block::{Block, ConfigBlock};
 use widget::{I3BarWidget, State};
 use widgets::text::TextWidget;
-use blocks::dbus::{BusType, Connection, Message, MessageItem};
-use blocks::dbus::arg::Variant;
 
 enum NetworkState {
     Unknown = 0,
@@ -36,7 +36,7 @@ impl From<u32> for NetworkState {
             50 => NetworkState::ConnectedLocal,
             60 => NetworkState::ConnectedSite,
             70 => NetworkState::ConnectedGlobal,
-            _  => NetworkState::Unknown,
+            _ => NetworkState::Unknown,
         }
     }
 }
@@ -68,7 +68,7 @@ impl From<String> for ConnectionType {
             // https://developer.gnome.org/NetworkManager/unstable/settings-connection.html
             "802-3-ethernet" => ConnectionType::Ethernet,
             "802-11-wireless" => ConnectionType::Wireless,
-            _  => ConnectionType::Other,
+            _ => ConnectionType::Other,
         }
     }
 }
@@ -83,8 +83,7 @@ impl fmt::Display for ConnectionType {
     }
 }
 
-struct ConnectionManager {
-}
+struct ConnectionManager {}
 
 impl ConnectionManager {
     pub fn new() -> Self {
@@ -96,12 +95,12 @@ impl ConnectionManager {
             "org.freedesktop.NetworkManager",
             "/org/freedesktop/NetworkManager",
             "org.freedesktop.DBus.Properties",
-            "Get")
-            .block_error("networkmanager", "Failed to create message")?
-            .append2(
-                MessageItem::Str("org.freedesktop.NetworkManager".to_string()),
-                MessageItem::Str(property.to_string())
-            );
+            "Get",
+        ).block_error("networkmanager", "Failed to create message")?
+        .append2(
+            MessageItem::Str("org.freedesktop.NetworkManager".to_string()),
+            MessageItem::Str(property.to_string()),
+        );
 
         let r = c.send_with_reply_and_block(m, 1000);
 
@@ -111,7 +110,8 @@ impl ConnectionManager {
     pub fn state(&self, c: &Connection) -> Result<NetworkState> {
         let m = try!(Self::get_property(c, "State"));
 
-        let state: Variant<u32> = m.get1()
+        let state: Variant<u32> = m
+            .get1()
             .block_error("networkmanager", "Failed to read property")?;
 
         Ok(NetworkState::from(state.0))
@@ -120,7 +120,8 @@ impl ConnectionManager {
     pub fn connection_type(&self, c: &Connection) -> Result<ConnectionType> {
         let m = try!(Self::get_property(c, "PrimaryConnectionType"));
 
-        let connection_type: Variant<String> = m.get1()
+        let connection_type: Variant<String> = m
+            .get1()
             .block_error("networkmanager", "Failed to read property")?;
 
         Ok(ConnectionType::from(connection_type.0))
@@ -165,7 +166,8 @@ impl ConfigBlock for NetworkManager {
                 "type='signal',\
                  path='/org/freedesktop/NetworkManager',\
                  interface='org.freedesktop.NetworkManager',\
-                 member='StateChanged'");
+                 member='StateChanged'"
+            );
 
             c.add_match(&rule).unwrap();
 

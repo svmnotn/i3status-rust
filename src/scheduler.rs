@@ -1,9 +1,9 @@
 use block::Block;
 use errors::*;
+use std::cmp;
 use std::collections::{BinaryHeap, HashMap};
 use std::fmt;
 use std::thread;
-use std::cmp;
 use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone)]
@@ -76,22 +76,27 @@ impl UpdateScheduler {
         }
     }
 
-    pub fn do_scheduled_updates(&mut self, block_map: &mut HashMap<String, &mut Block>) -> Result<()> {
-        let t = self.schedule
+    pub fn do_scheduled_updates(
+        &mut self,
+        block_map: &mut HashMap<String, &mut Block>,
+    ) -> Result<()> {
+        let t = self
+            .schedule
             .pop()
             .internal_error("scheduler", "schedule is empty")?;
         let mut tasks_next = vec![t.clone()];
 
-        while !self.schedule.is_empty() &&
-            t.update_time ==
-                self.schedule
-                    .peek()
-                    .internal_error("scheduler", "schedule is empty")?
-                    .update_time
+        while !self.schedule.is_empty() && t.update_time == self
+            .schedule
+            .peek()
+            .internal_error("scheduler", "schedule is empty")?
+            .update_time
         {
-            tasks_next.push(self.schedule
-                .pop()
-                .internal_error("scheduler", "schedule is empty")?)
+            tasks_next.push(
+                self.schedule
+                    .pop()
+                    .internal_error("scheduler", "schedule is empty")?,
+            )
         }
 
         let now = Instant::now();

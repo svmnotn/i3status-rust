@@ -1,20 +1,20 @@
-use std::fs;
-use std::path::Path;
-use std::os::unix::fs::symlink;
-use std::time::Duration;
-use std::process::Command;
-use std::env;
-use std::ffi::OsString;
 use chan::Sender;
 use scheduler::Task;
+use std::env;
+use std::ffi::OsString;
+use std::fs;
+use std::os::unix::fs::symlink;
+use std::path::Path;
+use std::process::Command;
+use std::time::Duration;
 
 use block::{Block, ConfigBlock};
 use config::Config;
 use de::deserialize_duration;
 use errors::*;
 use input::{I3BarEvent, MouseButton};
-use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
+use widgets::button::ButtonWidget;
 
 use uuid::Uuid;
 
@@ -28,7 +28,10 @@ pub struct Pacman {
 #[serde(deny_unknown_fields)]
 pub struct PacmanConfig {
     /// Update interval in seconds
-    #[serde(default = "PacmanConfig::default_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "PacmanConfig::default_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub interval: Duration,
 }
 
@@ -41,7 +44,11 @@ impl PacmanConfig {
 impl ConfigBlock for Pacman {
     type Config = PacmanConfig;
 
-    fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
+    fn new(
+        block_config: Self::Config,
+        config: Config,
+        _tx_update_request: Sender<Task>,
+    ) -> Result<Self> {
         Ok(Pacman {
             id: format!("{}", Uuid::new_v4().to_simple()),
             update_interval: block_config.interval,
@@ -61,16 +68,15 @@ fn run_command(var: &str) -> Result<()> {
 }
 
 fn has_fake_root() -> Result<bool> {
-    Ok(
-        String::from_utf8(
-            Command::new("sh")
-                .args(&["-c", "type -P fakeroot"])
-                .output()
-                .block_error("pacman", "failed to start command to check for fakeroot")?
-                .stdout,
-        ).block_error("pacman", "failed to check for fakeroot")?
-            .trim() != "",
-    )
+    Ok(String::from_utf8(
+        Command::new("sh")
+            .args(&["-c", "type -P fakeroot"])
+            .output()
+            .block_error("pacman", "failed to start command to check for fakeroot")?
+            .stdout,
+    ).block_error("pacman", "failed to check for fakeroot")?
+    .trim()
+        != "")
 }
 
 fn get_update_count() -> Result<usize> {
@@ -86,9 +92,7 @@ fn get_update_count() -> Result<usize> {
         .into_string()
         .block_error("pacman", "There's a problem with your $USER")?;
     let updates_db = env::var_os("CHECKUPDATES_DB")
-        .unwrap_or_else(|| {
-            OsString::from(format!("{}/checkup-db-{}", tmp_dir, user))
-        })
+        .unwrap_or_else(|| OsString::from(format!("{}/checkup-db-{}", tmp_dir, user)))
         .into_string()
         .block_error("pacman", "There's a problem with your $CHECKUPDATES_DB")?;
 
@@ -117,24 +121,20 @@ fn get_update_count() -> Result<usize> {
     ))?;
 
     // Get update count
-    Ok(
-        String::from_utf8(
-            Command::new("sh")
-                .env("LC_ALL", "C")
-                .args(&[
-                    "-c",
-                    &format!("fakeroot pacman -Qu --dbpath \"{}\"", updates_db),
-                ])
-                .output()
-                .block_error("pacman", "There was a problem running the pacman commands")?
-                .stdout,
-        ).block_error("pacman", "there was a problem parsing the output")?
-            .lines()
-            .filter(|line| !line.contains("[ignored]"))
-            .count(),
-    )
+    Ok(String::from_utf8(
+        Command::new("sh")
+            .env("LC_ALL", "C")
+            .args(&[
+                "-c",
+                &format!("fakeroot pacman -Qu --dbpath \"{}\"", updates_db),
+            ]).output()
+            .block_error("pacman", "There was a problem running the pacman commands")?
+            .stdout,
+    ).block_error("pacman", "there was a problem parsing the output")?
+    .lines()
+    .filter(|line| !line.contains("[ignored]"))
+    .count())
 }
-
 
 impl Block for Pacman {
     fn update(&mut self) -> Result<Option<Duration>> {
@@ -145,7 +145,6 @@ impl Block for Pacman {
             _ => State::Info,
         });
         Ok(Some(self.update_interval))
-
     }
 
     fn view(&self) -> Vec<&I3BarWidget> {
@@ -157,7 +156,9 @@ impl Block for Pacman {
     }
 
     fn click(&mut self, event: &I3BarEvent) -> Result<()> {
-        if event.name.as_ref().map(|s| s == "pacman").unwrap_or(false) && event.button == MouseButton::Left {
+        if event.name.as_ref().map(|s| s == "pacman").unwrap_or(false)
+            && event.button == MouseButton::Left
+        {
             self.update()?;
         }
 

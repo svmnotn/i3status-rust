@@ -1,21 +1,21 @@
-use std::time::{Duration, Instant};
 use chan::Sender;
-use std::thread;
 use std::boxed::Box;
+use std::thread;
+use std::time::{Duration, Instant};
 
-use config::Config;
-use errors::*;
-use scheduler::Task;
-use input::I3BarEvent;
 use block::{Block, ConfigBlock};
+use config::Config;
 use de::deserialize_duration;
-use widgets::rotatingtext::RotatingTextWidget;
-use widgets::button::ButtonWidget;
+use errors::*;
+use input::I3BarEvent;
+use scheduler::Task;
 use widget::{I3BarWidget, State};
+use widgets::button::ButtonWidget;
+use widgets::rotatingtext::RotatingTextWidget;
 
-use blocks::dbus::{arg, stdintf, BusType, Connection, ConnectionItem, Message};
-use blocks::dbus::arg::RefArg;
 use self::stdintf::org_freedesktop_dbus::Properties;
+use blocks::dbus::arg::RefArg;
+use blocks::dbus::{arg, stdintf, BusType, Connection, ConnectionItem, Message};
 use uuid::Uuid;
 
 pub struct Music {
@@ -45,11 +45,17 @@ pub struct MusicConfig {
     pub marquee: bool,
 
     /// Marquee interval in seconds. This is the delay between each rotation.
-    #[serde(default = "MusicConfig::default_marquee_interval", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "MusicConfig::default_marquee_interval",
+        deserialize_with = "deserialize_duration"
+    )]
     pub marquee_interval: Duration,
 
     /// Marquee speed in seconds. This is the scrolling time used per character.
-    #[serde(default = "MusicConfig::default_marquee_speed", deserialize_with = "deserialize_duration")]
+    #[serde(
+        default = "MusicConfig::default_marquee_speed",
+        deserialize_with = "deserialize_duration"
+    )]
     pub marquee_speed: Duration,
 
     /// Array of control buttons to be displayed. Options are<br/>prev (previous title), play (play/pause) and next (next title)
@@ -88,13 +94,14 @@ impl ConfigBlock for Music {
 
         thread::spawn(move || {
             let c = Connection::get_private(BusType::Session).unwrap();
-            c.add_match(
-                "interface='org.freedesktop.DBus.Properties',member='PropertiesChanged'",
-            ).unwrap();
+            c.add_match("interface='org.freedesktop.DBus.Properties',member='PropertiesChanged'")
+                .unwrap();
             loop {
                 for ci in c.iter(100000) {
                     if let ConnectionItem::Signal(msg) = ci {
-                        if &*msg.path().unwrap() == "/org/mpris/MediaPlayer2" && &*msg.member().unwrap() == "PropertiesChanged" {
+                        if &*msg.path().unwrap() == "/org/mpris/MediaPlayer2"
+                            && &*msg.member().unwrap() == "PropertiesChanged"
+                        {
                             send.send(Task {
                                 id: id.clone(),
                                 update_time: Instant::now(),
@@ -146,7 +153,7 @@ impl ConfigBlock for Music {
                 block_config.max_width,
                 config.clone(),
             ).with_icon("music")
-                .with_state(State::Info),
+            .with_state(State::Info),
             prev: prev,
             play: play,
             next: next,
@@ -185,7 +192,8 @@ impl Block for Music {
             } else {
                 let metadata = data.unwrap();
 
-                let (title, artist) = extract_from_metadata(&metadata).unwrap_or((String::new(), String::new()));
+                let (title, artist) =
+                    extract_from_metadata(&metadata).unwrap_or((String::new(), String::new()));
 
                 if title.is_empty() && artist.is_empty() {
                     self.player_avail = false;
@@ -275,32 +283,38 @@ fn extract_from_metadata(metadata: &Box<arg::RefArg>) -> Result<(String, String)
         .block_error("music", "failed to extract metadata")?;
 
     while let Some(key) = iter.next() {
-        let value = iter.next()
+        let value = iter
+            .next()
             .block_error("music", "failed to extract metadata")?;
-        match key.as_str()
+        match key
+            .as_str()
             .block_error("music", "failed to extract metadata")?
         {
             "xesam:artist" => {
-                artist = String::from(value
-                    .as_iter()
-                    .block_error("music", "failed to extract metadata")?
-                    .nth(0)
-                    .block_error("music", "failed to extract metadata")?
-                    .as_iter()
-                    .block_error("music", "failed to extract metadata")?
-                    .nth(0)
-                    .block_error("music", "failed to extract metadata")?
-                    .as_iter()
-                    .block_error("music", "failed to extract metadata")?
-                    .nth(0)
-                    .block_error("music", "failed to extract metadata")?
-                    .as_str()
-                    .block_error("music", "failed to extract metadata")?)
+                artist = String::from(
+                    value
+                        .as_iter()
+                        .block_error("music", "failed to extract metadata")?
+                        .nth(0)
+                        .block_error("music", "failed to extract metadata")?
+                        .as_iter()
+                        .block_error("music", "failed to extract metadata")?
+                        .nth(0)
+                        .block_error("music", "failed to extract metadata")?
+                        .as_iter()
+                        .block_error("music", "failed to extract metadata")?
+                        .nth(0)
+                        .block_error("music", "failed to extract metadata")?
+                        .as_str()
+                        .block_error("music", "failed to extract metadata")?,
+                )
             }
             "xesam:title" => {
-                title = String::from(value
-                    .as_str()
-                    .block_error("music", "failed to extract metadata")?)
+                title = String::from(
+                    value
+                        .as_str()
+                        .block_error("music", "failed to extract metadata")?,
+                )
             }
             _ => {}
         };
