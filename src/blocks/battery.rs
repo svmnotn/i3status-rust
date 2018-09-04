@@ -228,7 +228,7 @@ impl ConfigBlock for Battery {
 
     fn new(block_config: Self::Config, config: Config, _tx_update_request: Sender<Task>) -> Result<Self> {
         Ok(Battery {
-            id: Uuid::new_v4().simple().to_string(),
+            id: format!("{}", Uuid::new_v4().to_simple()),
             update_interval: block_config.interval,
             output: TextWidget::new(config),
             device: try!(PowerSupplyDevice::from_device(block_config.device)),
