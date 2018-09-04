@@ -242,7 +242,7 @@ impl ConfigBlock for Battery {
             id: format!("{}", Uuid::new_v4().to_simple()),
             update_interval: block_config.interval,
             output: TextWidget::new(config),
-            device: try!(PowerSupplyDevice::from_device(block_config.device)),
+            device: PowerSupplyDevice::from_device(block_config.device)?,
             show: block_config.show,
         })
     }
